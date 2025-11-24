@@ -5,9 +5,8 @@
 #include <string.h>
 #include <linux/uinput.h>
 #include <linux/joystick.h>
+#include "VirtualMouse.hpp"
 
-int setup_virtual_mouse();
-void emit(int fd, int type, int code, int val);
 void process_event(js_event event);
 
 int16_t joy_x = 0;
@@ -17,12 +16,14 @@ bool exit_program = false;
 int mouse_file;
 int gamepad_file;
 
+VirtualMouse *virtual_mouse;
+
 int main()
 {
-  mouse_file = setup_virtual_mouse();
+  virtual_mouse = new VirtualMouse("Test_Mouse", 0x1010, 0x0101);
   gamepad_file = open("/dev/input/js0", O_NONBLOCK);
 
-  if (!mouse_file)
+  if (!virtual_mouse)
   {
     std::cout << "Error creating virtual mouse" << std::endl;
     return -1;
@@ -40,55 +41,12 @@ int main()
     {
       process_event(event);
     }
-    emit(mouse_file, EV_REL, REL_X, 10 * ((float)joy_x / 32767));
-    emit(mouse_file, EV_REL, REL_Y, 10 * ((float)joy_y / 32767));
-    emit(mouse_file, EV_SYN, SYN_REPORT, 0);
-    usleep(10000);
+    virtual_mouse->moveMouseRelative(VirtualMouse::X_AXIS, 10 * ((float)joy_x / 32767));
+    virtual_mouse->moveMouseRelative(VirtualMouse::Y_AXIS, 10 * ((float)joy_y / 32767));
   }
   sleep(1);
-  ioctl(mouse_file, UI_DEV_DESTROY);
-  close(mouse_file);
   close(gamepad_file);
   return 0;
-}
-
-int setup_virtual_mouse()
-{
-  struct uinput_setup usetup;
-
-  int fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
-
-  /* enable mouse button left and relative events */
-  ioctl(fd, UI_SET_EVBIT, EV_KEY);
-  ioctl(fd, UI_SET_KEYBIT, BTN_LEFT);
-
-  ioctl(fd, UI_SET_EVBIT, EV_REL);
-  ioctl(fd, UI_SET_RELBIT, REL_X);
-  ioctl(fd, UI_SET_RELBIT, REL_Y);
-
-  memset(&usetup, 0, sizeof(usetup));
-  usetup.id.bustype = BUS_USB;
-  usetup.id.vendor = 0x1111;  /* sample vendor */
-  usetup.id.product = 0x1111; /* sample product */
-  strcpy(usetup.name, "Gamepad_Virtual");
-
-  ioctl(fd, UI_DEV_SETUP, &usetup);
-  ioctl(fd, UI_DEV_CREATE);
-
-  return fd;
-}
-
-void emit(int fd, int type, int code, int val)
-{
-  struct input_event ie;
-
-  ie.type = type;
-  ie.code = code;
-  ie.value = val;
-  ie.time.tv_sec = 0;
-  ie.time.tv_usec = 0;
-
-  write(fd, &ie, sizeof(ie));
 }
 
 void process_event(js_event event)
@@ -114,8 +72,7 @@ void process_event(js_event event)
     }
     if (event.number == 0)
     {
-      emit(mouse_file, EV_KEY, BTN_LEFT, event.value);
-      emit(mouse_file, EV_SYN, SYN_REPORT, 0);
+      event.value ? virtual_mouse->releaseButton(VirtualMouse::LEFT_CLICK) : virtual_mouse->releaseButton(VirtualMouse::LEFT_CLICK);
     }
     break;
   }
