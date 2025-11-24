@@ -1,0 +1,18 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build",
+            "type": "shell",
+            "command": "cmake --build build",
+            "group": "build"
+        },
+        {
+            "label": "Build and Excecute",
+            "type": "shell",
+            "command": "cmake --build build && ./build/Controller_Mouse",
+            "group": "build"
+        }
+    ]
+}
+
