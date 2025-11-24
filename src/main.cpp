@@ -45,7 +45,10 @@ int main()
     emit(mouse_file, EV_SYN, SYN_REPORT, 0);
     usleep(10000);
   }
-
+  sleep(1);
+  ioctl(mouse_file, UI_DEV_DESTROY);
+  close(mouse_file);
+  close(gamepad_file);
   return 0;
 }
 
