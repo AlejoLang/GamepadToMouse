@@ -1,8 +1,5 @@
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <string.h>
 #include <linux/uinput.h>
+#include <string.h>
 #include <string>
 
 #define sci static const int
@@ -23,10 +20,11 @@ public:
 
 private:
   void send_sync_report();
-void emit(int type, int code, int val);
+  void emit(int type, int code, int val);
 
-    public : VirtualMouse(std::string name = "Default_Name", int vendor_id = 0x1111, int product_id = 0x1111);
-  void moveMouseRelative(int axis, int pixels);
+public:
+  VirtualMouse(std::string name = "Default_Name", int vendor_id = 0x1111, int product_id = 0x1111);
+  void moveMouseRelativeXY(int dx, int dy);
   void pressButton(int button);
   void releaseButton(int button);
   ~VirtualMouse();

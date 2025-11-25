@@ -1,4 +1,7 @@
 #include "VirtualMouse.hpp"
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
 
 VirtualMouse::VirtualMouse(std::string name, int vendor_id, int product_id)
 {
@@ -39,9 +42,10 @@ void VirtualMouse::emit(int type, int code, int val)
   write(this->mouse_file, &new_event, sizeof(new_event));
 }
 
-void VirtualMouse::moveMouseRelative(int axis, int pixels)
+void VirtualMouse::moveMouseRelativeXY(int dx, int dy)
 {
-  this->emit(EV_REL, axis, pixels);
+  this->emit(EV_REL, REL_X, dx);
+  this->emit(EV_REL, REL_Y, dy);
   send_sync_report();
 }
 
