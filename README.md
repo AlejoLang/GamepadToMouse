@@ -12,7 +12,6 @@ Currently on really early stages, it still lacks the ability to recognize gamepa
 
 ## TODO
 
--   [ ] Dynamic detection of controllers when connected
 -   [ ] Ability to map buttons and load configurations
 -   [ ] Ability to map buttons to mouse actions
 
