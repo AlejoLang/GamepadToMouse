@@ -1,7 +1,7 @@
 # Gamepad to Mouse
 
 Small utility that implements a virtual mouse that you can control using a gamepad.
-Currently on really early stages, it still lacks the ability to recognize gamepads when plugged and map their buttons. It only works when a gamepad is already plugged in at the start and it's located on the /dev/input/js0.
+It its on early stages, can't map buttons from the gampad or to the mouse.
 
 ## Current features
 
