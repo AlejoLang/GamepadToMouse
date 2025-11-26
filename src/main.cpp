@@ -5,23 +5,33 @@
 #include <chrono>
 #include <algorithm>
 #include "VirtualMouse.hpp"
-#include "Gamepad.hpp"
 #include "math.h"
+#include "SDL3/SDL.h"
+#include "SDL3/SDL_gamepad.h"
+#include "SDL3/SDL_mouse.h"
+
+#define SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS "SDL_JOYSTICK_ALLOW_BACKGROUND_EVENTS"
+#define ANALOG_MAX_VALUE 32767
 
 int scan_gamepads();
-void process_event(js_event event);
-void process_event_joystick(js_event event);
-void process_event_button(js_event event);
+void process_gamepad_events();
+void process_gamepad_button_event(SDL_Event *event);
 
 bool exit_program = false;
 
+struct Gamepad
+{
+  SDL_JoystickID id;
+  SDL_Gamepad *gamepad;
+};
+
 VirtualMouse *virtual_mouse = nullptr;
-Gamepad *current_gamepad = nullptr;
-std::vector<Gamepad *> gamepads = {};
+Gamepad current_gamepad = {0, nullptr};
+std::vector<Gamepad> gamepads = {};
 
 int main()
 {
-  int detected_new_gamepads = scan_gamepads();
+  SDL_Init(SDL_INIT_GAMEPAD | SDL_INIT_JOYSTICK);
   virtual_mouse = new VirtualMouse("Test_Mouse", 0x1010, 0x0101);
 
   if (!virtual_mouse)
@@ -29,28 +39,15 @@ int main()
     std::cout << "Error creating virtual mouse" << std::endl;
     return -1;
   }
-  if (gamepads.size() == 0)
-  {
-    std::cout << "Waiting for a gamepad to be connected" << std::endl;
-  }
 
   while (!exit_program)
   {
-    detected_new_gamepads = scan_gamepads();
-    if (detected_new_gamepads > 0)
+    process_gamepad_events();
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    if (current_gamepad.gamepad != nullptr)
     {
-      std::this_thread::sleep_for(std::chrono::seconds(1));
-    }
-    if (current_gamepad)
-    {
-      js_event event = current_gamepad->get_event();
-      while (event.type != static_cast<u_char>(-1))
-      {
-        process_event(event);
-        event = current_gamepad->get_event();
-      }
-      float x = ((float)current_gamepad->joy1.x / Gamepad::MAX_ANALOG_VALUE);
-      float y = ((float)current_gamepad->joy1.y / Gamepad::MAX_ANALOG_VALUE);
+      float x = ((float)SDL_GetGamepadAxis(current_gamepad.gamepad, SDL_GAMEPAD_AXIS_LEFTX) / ANALOG_MAX_VALUE);
+      float y = ((float)SDL_GetGamepadAxis(current_gamepad.gamepad, SDL_GAMEPAD_AXIS_LEFTY) / ANALOG_MAX_VALUE);
       float mag = sqrt(x * x + y * y);
       if (mag > 1.0f)
       {
@@ -63,143 +60,89 @@ int main()
     }
   }
 
-  for (Gamepad *gamepad : g > amepads)
+  for (auto gamepad : gamepads)
   {
-    delete gamepad;
+    SDL_CloseGamepad(gamepad.gamepad);
   }
 
   delete virtual_mouse;
   return 0;
 }
 
-int scan_gamepads()
+void process_gamepad_events()
 {
-  int new_gamepads = 0;
-  std::vector<std::string> devices_paths;
-  // Scan the /dev/input/ files
-  for (const auto &entry : std::filesystem::directory_iterator("/dev/input/"))
+  SDL_Event new_event;
+  bool has_event = SDL_PollEvent(&new_event);
+  while (has_event)
   {
-    std::string device_path = entry.path().string();
-    bool device_already_added = false;
-    // for each file, process the joysticks
-    if (device_path.find("js") != std::string::npos)
+    switch (new_event.type)
     {
-      devices_paths.push_back(device_path);
-      // Checks if the device was already added
-      for (auto &gamepad : gamepads)
+    case SDL_EVENT_GAMEPAD_ADDED:
+    {
+      SDL_JoystickID added_gamepad_id = new_event.gdevice.which;
+      SDL_OpenGamepad(added_gamepad_id);
+      SDL_Gamepad *added_gamepad = SDL_GetGamepadFromID(added_gamepad_id);
+      gamepads.push_back({added_gamepad_id, added_gamepad});
+      if (current_gamepad.gamepad == nullptr)
       {
-        if (device_path == gamepad->get_path())
+        current_gamepad = {added_gamepad_id, added_gamepad};
+        SDL_RumbleGamepad(current_gamepad.gamepad, 0x0100, 0x0100, 10);
+      }
+      break;
+    }
+    case SDL_EVENT_GAMEPAD_REMOVED:
+    {
+      SDL_JoystickID removed_gamepad_id = new_event.gdevice.which;
+      for (std::vector<Gamepad>::iterator it = gamepads.begin(); it != gamepads.end(); it++)
+      {
+        if (it->id == removed_gamepad_id)
         {
-          device_already_added = true;
+          SDL_CloseGamepad(it->gamepad);
+          gamepads.erase(it);
           break;
         }
       }
-
-      // If the device is new, adds it to the vector
-      if (!device_already_added)
+      if (current_gamepad.id == removed_gamepad_id)
       {
-        new_gamepads++;
-        Gamepad *new_gamepad = new Gamepad(device_path);
-        if (new_gamepad->get_file() != -1)
-        {
-          std::cout << "Gamepad " << entry.path() << " detected" << std::endl;
-          new_gamepads++;
-          gamepads.push_back(new_gamepad);
-        }
-        else
-        {
-          std::cout << "Error processing gamepad " << entry.path() << std::endl;
-          delete new_gamepad;
-        }
+        current_gamepad = gamepads.empty() ? Gamepad(0, nullptr) : gamepads[0];
       }
+      break;
     }
-  }
-
-  // Check for devices that have been disconnected
-  for (std::vector<Gamepad *>::iterator it = gamepads.begin(); it != gamepads.end();)
-  {
-    if (find(devices_paths.begin(), devices_paths.end(), (*it)->get_path()) == devices_paths.end())
+    case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+    case SDL_EVENT_GAMEPAD_BUTTON_UP:
     {
-      std::cout << "Device " << (*it)->get_path() << " removed" << std::endl;
-
-      if (current_gamepad == *it)
-      {
-        current_gamepad = nullptr;
-      }
-
-      delete (*it);
-      it = gamepads.erase(it);
+      process_gamepad_button_event(&new_event);
+      break;
     }
-    else
-    {
-      it++;
+    default:
+      break;
     }
+    has_event = SDL_PollEvent(&new_event);
   }
-
-  if (current_gamepad == nullptr && !gamepads.empty())
-  {
-    current_gamepad = gamepads[0];
-  }
-  else
-  {
-    current_gamepad = nullptr;
-  }
-
-  return new_gamepads;
 }
-
-void process_event(js_event event)
+void process_gamepad_button_event(SDL_Event *event)
 {
-  switch (event.type)
+  switch (event->gbutton.button)
   {
-  case Gamepad::EV_JOYSTICK:
-    process_event_joystick(event);
+  case SDL_GAMEPAD_BUTTON_SOUTH:
+  {
+    event->gbutton.down ? virtual_mouse->pressButton(VirtualMouse::LEFT_CLICK) : virtual_mouse->releaseButton(VirtualMouse::LEFT_CLICK);
     break;
-  case JS_EVENT_BUTTON:
-    process_event_button(event);
   }
-}
-
-void process_event_joystick(js_event event)
-{
-  if (event.number == current_gamepad->JOY1_X)
+  case SDL_GAMEPAD_BUTTON_EAST:
   {
-    current_gamepad->joy1.x = event.value;
+    event->gbutton.down ? virtual_mouse->pressButton(VirtualMouse::RIGHT_CLICK) : virtual_mouse->releaseButton(VirtualMouse::RIGHT_CLICK);
+    break;
   }
-  else if (event.number == current_gamepad->JOY1_Y)
+  case SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER:
   {
-    current_gamepad->joy1.y = event.value;
+    event->gbutton.down ? virtual_mouse->pressButton(VirtualMouse::MIDDLE_CLICK) : virtual_mouse->releaseButton(VirtualMouse::MIDDLE_CLICK);
+    break;
   }
-  else if (event.number == current_gamepad->JOY2_X)
+  case SDL_GAMEPAD_BUTTON_GUIDE:
   {
-    current_gamepad->joy2.x = event.value;
+    exit_program = true;
+    break;
   }
-  else if (event.number == current_gamepad->JOY2_Y)
-  {
-    current_gamepad->joy2.y = event.value;
-  }
-  else if (event.number == current_gamepad->DPAD_X)
-  {
-    current_gamepad->dpad.x = event.value;
-  }
-  else if (event.number == current_gamepad->DPAD_Y)
-  {
-    current_gamepad->dpad.y = event.value;
-  }
-}
-
-void process_event_button(js_event event)
-{
-  if (event.number == current_gamepad->BTN_CR)
-  {
-    event.value ? virtual_mouse->pressButton(VirtualMouse::LEFT_CLICK) : virtual_mouse->releaseButton(VirtualMouse::LEFT_CLICK);
-  }
-  else if (event.number == current_gamepad->BTN_CI)
-  {
-    event.value ? virtual_mouse->pressButton(VirtualMouse::RIGHT_CLICK) : virtual_mouse->releaseButton(VirtualMouse::RIGHT_CLICK);
-  }
-  else if (event.number == current_gamepad->BTN_RB)
-  {
-    event.value ? virtual_mouse->pressButton(VirtualMouse::MIDDLE_CLICK) : virtual_mouse->releaseButton(VirtualMouse::MIDDLE_CLICK);
   }
 }

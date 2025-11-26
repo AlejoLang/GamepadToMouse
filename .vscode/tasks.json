@@ -10,7 +10,7 @@
         {
             "label": "Build and Excecute",
             "type": "shell",
-            "command": "cmake --build build && ./build/Controller_Mouse",
+            "command": "cmake --build build && ./build/Debug/Controller_Mouse",
             "group": "build"
         }
     ]
