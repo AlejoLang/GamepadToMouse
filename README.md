@@ -1,7 +1,7 @@
 # Gamepad to Mouse
 
 Small utility that implements a virtual mouse that you can control using a gamepad.
-It its on early stages, can't map buttons from the gampad or to the mouse.
+Uses SDL to handle the Gamepads currently
 
 ## Current features
 
@@ -12,6 +12,5 @@ It its on early stages, can't map buttons from the gampad or to the mouse.
 
 ## TODO
 
--   [ ] Ability to map buttons and load configurations
--   [ ] Ability to map buttons to mouse actions
+-   [ ] Add a small interface, maybe TUI to map mouse/keyboard events to buttons.
 
