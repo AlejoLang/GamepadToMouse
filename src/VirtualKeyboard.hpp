@@ -2,7 +2,6 @@
 #define VirtualKeyboard_h
 #include "VirtualDevice.hpp"
 #include <linux/uinput.h>
-#include <string.h>
 #include <string>
 
 class VirtualKeyboard : public VirtualDevice

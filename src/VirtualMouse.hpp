@@ -2,7 +2,6 @@
 #define VirtualMouse_h
 #include "VirtualDevice.hpp"
 #include <linux/uinput.h>
-#include <string.h>
 #include <string>
 
 class VirtualMouse : public VirtualDevice

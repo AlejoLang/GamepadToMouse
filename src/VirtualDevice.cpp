@@ -3,12 +3,10 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include "iostream"
 
-VirtualDevice::VirtualDevice(std::string device_path)
+VirtualDevice::VirtualDevice()
 {
-  std::cout << device_path << std::endl;
-  this->device_file = open(device_path.c_str(), O_WRONLY | O_NONBLOCK);
+  this->device_file = open(UINPUT_DEVICE_PATH, O_WRONLY | O_NONBLOCK);
 }
 
 int VirtualDevice::get_file()
@@ -31,7 +29,6 @@ void VirtualDevice::emit(int type, int key, int value)
   new_event.value = value;
   new_event.time.tv_sec = 0;
   new_event.time.tv_usec = 0;
-  std::cout << "Emmited " << type << " " << key << " " << value << " on " << this->device_file << std::endl;
 
   write(this->device_file, &new_event, sizeof(new_event));
 }

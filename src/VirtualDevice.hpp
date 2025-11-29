@@ -1,6 +1,7 @@
 #ifndef VirtualDevice_h
 #define VirtualDevice_h
-#include <string>
+
+#define UINPUT_DEVICE_PATH "/dev/uinput"
 
 class VirtualDevice
 {
@@ -21,7 +22,7 @@ public:
   };
 
 public:
-  VirtualDevice(std::string device_path);
+  VirtualDevice();
   int get_file();
   void do_key_action(Action action, int value);
   ~VirtualDevice();

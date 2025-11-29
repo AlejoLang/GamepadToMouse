@@ -2,8 +2,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <cstring>
 
-VirtualMouse::VirtualMouse(std::string name, int vendor_id, int product_id) : VirtualDevice("/dev/uinput")
+VirtualMouse::VirtualMouse(std::string name, int vendor_id, int product_id)
 {
   struct uinput_setup usetup;
 
@@ -21,7 +22,8 @@ VirtualMouse::VirtualMouse(std::string name, int vendor_id, int product_id) : Vi
   usetup.id.bustype = BUS_USB;
   usetup.id.vendor = vendor_id;
   usetup.id.product = product_id;
-  strcpy(usetup.name, name.c_str());
+  strncpy(usetup.name, name.c_str(), sizeof(usetup.name));
+  usetup.name[sizeof(usetup.name) - 1] = '\0';
 
   ioctl(this->device_file, UI_DEV_SETUP, &usetup);
   ioctl(this->device_file, UI_DEV_CREATE);
