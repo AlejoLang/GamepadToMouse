@@ -6,6 +6,9 @@
 
 class VirtualMouse : public VirtualDevice
 {
+private:
+  float sensitivity;
+
 public:
   struct MouseKeyAction : VirtualDevice::Action
   {
@@ -23,6 +26,8 @@ public:
 public:
   VirtualMouse(std::string name = "Default_Name", int vendor_id = 0x1111, int product_id = 0x1111);
   void moveMouseRelativeXY(int dx, int dy);
+  void set_sensitivity(float value);
+  float get_sensitivity();
   ~VirtualMouse() {};
 };
 
