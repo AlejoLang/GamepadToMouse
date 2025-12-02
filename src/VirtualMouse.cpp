@@ -35,7 +35,7 @@ void VirtualMouse::moveMouseRelativeXY(int dx, int dy)
   {
     return;
   }
-  this->emit(EV_REL, REL_X, dx);
-  this->emit(EV_REL, REL_Y, dy);
+  this->emit_event(EV_REL, REL_X, dx);
+  this->emit_event(EV_REL, REL_Y, dy);
   this->send_sync_report();
 }

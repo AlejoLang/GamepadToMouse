@@ -28,7 +28,7 @@ public:
   ~VirtualDevice();
 
 protected:
-  void emit(int type, int key, int value);
+  void emit_event(int type, int key, int value);
   void send_sync_report();
 };
 

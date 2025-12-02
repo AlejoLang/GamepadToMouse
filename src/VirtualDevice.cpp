@@ -16,11 +16,11 @@ int VirtualDevice::get_file()
 
 void VirtualDevice::do_key_action(Action action, int value)
 {
-  this->emit(action.type, action.key, value);
+  this->emit_event(action.type, action.key, value);
   this->send_sync_report();
 }
 
-void VirtualDevice::emit(int type, int key, int value)
+void VirtualDevice::emit_event(int type, int key, int value)
 {
   input_event new_event;
 
@@ -35,7 +35,7 @@ void VirtualDevice::emit(int type, int key, int value)
 
 void VirtualDevice::send_sync_report()
 {
-  this->emit(EV_SYN, SYN_REPORT, 0);
+  this->emit_event(EV_SYN, SYN_REPORT, 0);
   usleep(10000);
 }
 
