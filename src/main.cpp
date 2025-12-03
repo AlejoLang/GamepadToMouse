@@ -2,14 +2,23 @@
 #include "AppWindow.hpp"
 #include "ControllersHandler.hpp"
 #include <QtCore/QTimer>
+#include <filesystem>
 
 #define SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS "SDL_JOYSTICK_ALLOW_BACKGROUND_EVENTS"
 
 void process_gamepad_events(AppWindow *app, ControllersHandler *handler);
 
+extern const std::filesystem::path config_path = std::filesystem::path(std::getenv("HOME")) / ".config" / "ControllerMouse";
+
 int main(int argc, char *argv[])
 {
   SDL_Init(SDL_INIT_GAMEPAD | SDL_INIT_JOYSTICK);
+
+  if (!std::filesystem::exists(config_path))
+  {
+    std::filesystem::create_directories(config_path);
+  }
+
   ControllersHandler *gamepads_controller_handler = new ControllersHandler();
   AppWindow *app = new AppWindow(argc, argv, gamepads_controller_handler);
 
