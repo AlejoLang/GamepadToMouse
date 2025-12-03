@@ -14,6 +14,21 @@ static const std::map<SDL_GamepadButton, VirtualDevice::Action> basic_default_on
                                                                                                     {SDL_GAMEPAD_BUTTON_DPAD_LEFT, VirtualKeyboard::KEY_LEFT_ACTION}};
 extern const std::filesystem::path config_path;
 
+static const std::map<SDL_GamepadButton, std::string> gamepad_parser = {
+    {SDL_GAMEPAD_BUTTON_DPAD_DOWN, "DPAD_DOWN"},
+    {SDL_GAMEPAD_BUTTON_DPAD_LEFT, "DPAD_LEFT"},
+    {SDL_GAMEPAD_BUTTON_DPAD_RIGHT, "DPAD_RIGHT"},
+    {SDL_GAMEPAD_BUTTON_DPAD_UP, "DPAD_UP"},
+    {SDL_GAMEPAD_BUTTON_SOUTH, "BTN_SOUTH"},
+    {SDL_GAMEPAD_BUTTON_EAST, "BTN_EAST"},
+    {SDL_GAMEPAD_BUTTON_NORTH, "BTN_NORTH"},
+    {SDL_GAMEPAD_BUTTON_WEST, "BTN_WEST"},
+    {SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, "BTN_LB"},
+    {SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, "BTN_RB"},
+    {SDL_GAMEPAD_BUTTON_GUIDE, "BTN_GUIDE"},
+    {SDL_GAMEPAD_BUTTON_START, "BTN_START"},
+    {SDL_GAMEPAD_BUTTON_BACK, "BTN_BACK"}};
+
 GamepadController::GamepadController(VirtualMouse *vm, VirtualKeyboard *vk, SDL_Gamepad *gp)
 {
   this->gamepad = gp;
@@ -77,24 +92,25 @@ void GamepadController::save_config()
   config_file << "MOUSE_JOY=" << (this->mouse_x_axis == SDL_GAMEPAD_AXIS_LEFTX ? "LEFT" : "RIGHT") << '\n';
   for (auto keybind : this->keymap)
   {
+    auto it_key = gamepad_parser.find(keybind.first);
     if (keybind.second.device == VirtualDevice::KEYBOARD)
     {
-      auto it = std::find_if(VirtualKeyboard::parser.begin(), VirtualKeyboard::parser.end(), [&](const std::pair<std::string, VirtualDevice::Action> pair)
-                             { return pair.second == keybind.second; });
-      if (it != VirtualKeyboard::parser.end())
+      auto it_value = std::find_if(VirtualKeyboard::parser.begin(), VirtualKeyboard::parser.end(), [&](const std::pair<std::string, VirtualDevice::Action> pair)
+                                   { return pair.second == keybind.second; });
+      if (it_value != VirtualKeyboard::parser.end() && it_key != gamepad_parser.end())
       {
-        std::string value = "KEYBOARD_" + it->first;
-        config_file << std::to_string(keybind.first) << "=" << value << '\n';
+        std::string value = "KEYBOARD_" + it_value->first;
+        config_file << it_key->second << "=" << value << '\n';
       }
     }
     if (keybind.second.device == VirtualDevice::MOUSE)
     {
-      auto it = std::find_if(VirtualMouse::parser.begin(), VirtualMouse::parser.end(), [&](const std::pair<std::string, VirtualDevice::Action> pair)
-                             { return pair.second == keybind.second; });
-      if (it != VirtualMouse::parser.end())
+      auto it_value = std::find_if(VirtualMouse::parser.begin(), VirtualMouse::parser.end(), [&](const std::pair<std::string, VirtualDevice::Action> pair)
+                                   { return pair.second == keybind.second; });
+      if (it_value != VirtualMouse::parser.end() && it_key != gamepad_parser.end())
       {
-        std::string value = "MOUSE_" + it->first;
-        config_file << std::to_string(keybind.first) << "=" << value << '\n';
+        std::string value = "MOUSE_" + it_value->first;
+        config_file << it_key->second << "=" << value << '\n';
       }
     }
   }
@@ -169,26 +185,23 @@ void GamepadController::load_config()
       }
       else
       {
-        // Expect key to be numeric (SDL button id). Validate before converting.
         try
         {
-          int gp_key = std::stoi(key);
+          auto it_key = std::find_if(gamepad_parser.begin(), gamepad_parser.end(), [&](const std::pair<SDL_GamepadButton, std::string> pair)
+                                     { return pair.second == key; });
+          SDL_GamepadButton gp_btn = it_key->first;
           size_t dev_key_limiter = value.find('_');
           std::string device = (dev_key_limiter == std::string::npos) ? value : value.substr(0, dev_key_limiter);
           std::string action_key = (dev_key_limiter == std::string::npos) ? std::string() : value.substr(dev_key_limiter + 1);
-          if (device == "MOUSE" && !action_key.empty())
+          if (device == "MOUSE" && !action_key.empty() && it_key != gamepad_parser.end())
           {
-            this->keymap.insert(std::make_pair(static_cast<SDL_GamepadButton>(gp_key), VirtualMouse::parser.at(action_key)));
+            this->keymap.insert(std::make_pair(gp_btn, VirtualMouse::parser.at(action_key)));
           }
-          else if (device == "KEYBOARD" && !action_key.empty())
+          else if (device == "KEYBOARD" && !action_key.empty() && it_key != gamepad_parser.end())
           {
-            this->keymap.insert(std::make_pair(static_cast<SDL_GamepadButton>(gp_key), VirtualKeyboard::parser.at(action_key)));
+            this->keymap.insert(std::make_pair(gp_btn, VirtualKeyboard::parser.at(action_key)));
           }
-          std::cout << "New keymap added " << gp_key << " " << device << " " << action_key << std::endl;
-        }
-        catch (const std::invalid_argument &e)
-        {
-          std::cerr << "Invalid key in config (not a number): '" << key << "' - skipping line" << std::endl;
+          std::cout << "New keymap added " << key << " " << device << " " << action_key << std::endl;
         }
         catch (const std::out_of_range &e)
         {

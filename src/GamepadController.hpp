@@ -31,6 +31,7 @@ public:
   void process_joysticks();
   SDL_Gamepad *get_gamepad();
   SDL_JoystickID get_gamepad_id();
+  void add_keybind(SDL_GamepadButton gp_btn, VirtualDevice::Action act);
   void save_config();
   void load_config();
 };
