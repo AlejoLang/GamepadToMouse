@@ -19,6 +19,14 @@ public:
     DeviceType device;
     int type;
     int key;
+    bool operator==(Action const &a) const
+    {
+      return (this->device == a.device && this->type == a.type && this->key == a.key);
+    }
+    bool operator!=(Action const &a) const
+    {
+      return !(*this == a);
+    }
   };
 
 public:

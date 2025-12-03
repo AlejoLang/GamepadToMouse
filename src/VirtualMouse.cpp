@@ -31,7 +31,7 @@ VirtualMouse::VirtualMouse(std::string name, int vendor_id, int product_id)
   ioctl(this->device_file, UI_DEV_CREATE);
 }
 
-void VirtualMouse::moveMouseRelativeXY(int dx, int dy)
+void VirtualMouse::moveMouseRelativeXY(float dx, float dy)
 {
   if (!dx && !dy)
   {
@@ -44,7 +44,8 @@ void VirtualMouse::moveMouseRelativeXY(int dx, int dy)
 
 void VirtualMouse::set_sensitivity(float value)
 {
-  this->sensitivity = std::min(0.f, std::max(value, 1.f));
+  // Clamp value to [0.0, 1.0]
+  this->sensitivity = std::max(0.0f, std::min(value, 1.0f));
 }
 
 float VirtualMouse::get_sensitivity()

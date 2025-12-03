@@ -3,6 +3,7 @@
 #include "VirtualDevice.hpp"
 #include <linux/uinput.h>
 #include <string>
+#include <map>
 
 class VirtualKeyboard : public VirtualDevice
 {
@@ -20,6 +21,11 @@ public:
   inline static KeyboardAction KEY_RIGHT_ACTION = KeyboardAction(KEY_RIGHT);
   inline static KeyboardAction KEY_DOWN_ACTION = KeyboardAction(KEY_DOWN);
   inline static KeyboardAction KEY_LEFT_ACTION = KeyboardAction(KEY_LEFT);
+  inline static std::map<std::string, VirtualDevice::Action> parser = {
+      {"KEY_UP", VirtualKeyboard::KEY_UP_ACTION},
+      {"KEY_RIGHT", VirtualKeyboard::KEY_DOWN_ACTION},
+      {"KEY_DOW", VirtualKeyboard::KEY_DOWN_ACTION},
+      {"KEY_LEFT", VirtualKeyboard::KEY_LEFT_ACTION}};
 
 public:
   VirtualKeyboard(std::string name = "Virtual_Keyobard", int vendor_id = 0x1111, int product_id = 0x1112);

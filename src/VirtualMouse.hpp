@@ -3,6 +3,7 @@
 #include "VirtualDevice.hpp"
 #include <linux/uinput.h>
 #include <string>
+#include <map>
 
 class VirtualMouse : public VirtualDevice
 {
@@ -22,10 +23,14 @@ public:
   inline static MouseKeyAction LEFT_CLICK_ACTION = MouseKeyAction(BTN_LEFT);
   inline static MouseKeyAction RIGHT_CLICK_ACTION = MouseKeyAction(BTN_RIGHT);
   inline static MouseKeyAction MIDDLE_CLICK_ACTION = MouseKeyAction(BTN_MIDDLE);
+  inline static std::map<std::string, VirtualDevice::Action> parser = {
+      {"LEFT_CLICK", VirtualMouse::LEFT_CLICK_ACTION},
+      {"RIGHT_CLICK", VirtualMouse::RIGHT_CLICK_ACTION},
+      {"MIDDLE_CLICK", VirtualMouse::MIDDLE_CLICK_ACTION}};
 
 public:
   VirtualMouse(std::string name = "Default_Name", int vendor_id = 0x1111, int product_id = 0x1111);
-  void moveMouseRelativeXY(int dx, int dy);
+  void moveMouseRelativeXY(float dx, float dy);
   void set_sensitivity(float value);
   float get_sensitivity();
   ~VirtualMouse() {};
