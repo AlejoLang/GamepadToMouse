@@ -23,8 +23,8 @@ public:
   inline static KeyboardAction KEY_LEFT_ACTION = KeyboardAction(KEY_LEFT);
   inline static std::map<std::string, VirtualDevice::Action> parser = {
       {"KEY_UP", VirtualKeyboard::KEY_UP_ACTION},
-      {"KEY_RIGHT", VirtualKeyboard::KEY_DOWN_ACTION},
-      {"KEY_DOW", VirtualKeyboard::KEY_DOWN_ACTION},
+      {"KEY_RIGHT", VirtualKeyboard::KEY_RIGHT_ACTION},
+      {"KEY_DOWN", VirtualKeyboard::KEY_DOWN_ACTION},
       {"KEY_LEFT", VirtualKeyboard::KEY_LEFT_ACTION}};
 
 public:
