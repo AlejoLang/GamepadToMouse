@@ -5,6 +5,7 @@
 #include "SDL3/SDL.h"
 #include <map>
 #include <string>
+#include <filesystem>
 #include "VirtualDevice.hpp"
 #include "VirtualMouse.hpp"
 #include "VirtualKeyboard.hpp"
@@ -20,7 +21,7 @@ private:
   SDL_Gamepad *gamepad;
   SDL_JoystickID gamepad_id;
   std::map<SDL_GamepadButton, VirtualDevice::Action> keymap;
-  std::string gamepad_config_name;
+  std::filesystem::path gamepad_config_path;
   SDL_GamepadAxis mouse_x_axis = SDL_GAMEPAD_AXIS_LEFTX;
   SDL_GamepadAxis mouse_y_axis = SDL_GAMEPAD_AXIS_LEFTY;
 
@@ -31,6 +32,7 @@ public:
   SDL_Gamepad *get_gamepad();
   SDL_JoystickID get_gamepad_id();
   void save_config();
+  void load_config();
 };
 
 #endif

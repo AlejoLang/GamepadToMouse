@@ -3,6 +3,7 @@
 #include <iostream>
 #include <math.h>
 #include <algorithm>
+#include <filesystem>
 
 static const std::map<SDL_GamepadButton, VirtualDevice::Action> basic_default_only_error_mapping = {{SDL_GAMEPAD_BUTTON_SOUTH, VirtualMouse::LEFT_CLICK_ACTION},
                                                                                                     {SDL_GAMEPAD_BUTTON_EAST, VirtualMouse::RIGHT_CLICK_ACTION},
@@ -11,6 +12,7 @@ static const std::map<SDL_GamepadButton, VirtualDevice::Action> basic_default_on
                                                                                                     {SDL_GAMEPAD_BUTTON_DPAD_RIGHT, VirtualKeyboard::KEY_RIGHT_ACTION},
                                                                                                     {SDL_GAMEPAD_BUTTON_DPAD_DOWN, VirtualKeyboard::KEY_DOWN_ACTION},
                                                                                                     {SDL_GAMEPAD_BUTTON_DPAD_LEFT, VirtualKeyboard::KEY_LEFT_ACTION}};
+extern const std::filesystem::path config_path;
 
 GamepadController::GamepadController(VirtualMouse *vm, VirtualKeyboard *vk, SDL_Gamepad *gp)
 {
@@ -18,8 +20,90 @@ GamepadController::GamepadController(VirtualMouse *vm, VirtualKeyboard *vk, SDL_
   this->virtual_keyboard = vk;
   this->virtual_mouse = vm;
   this->gamepad_id = gp ? SDL_GetGamepadID(gp) : 0;
-  this->gamepad_config_name = "./" + std::string(SDL_GetGamepadName(gp)) + "_" + std::to_string(SDL_GetGamepadVendor(gp)) + "_" + std::to_string(SDL_GetGamepadProduct(gp)) + ".cfg";
-  std::fstream config_file = std::fstream(this->gamepad_config_name, std::fstream::in);
+  std::string gamepad_config_name = "./" + std::string(SDL_GetGamepadName(gp)) + "_" + std::to_string(SDL_GetGamepadVendor(gp)) + "_" + std::to_string(SDL_GetGamepadProduct(gp)) + ".cfg";
+  this->gamepad_config_path = config_path / gamepad_config_name;
+  this->load_config();
+}
+
+void GamepadController::process_key_event(SDL_Event *event)
+{
+  if (event->gbutton.which != this->gamepad_id || !this->keymap.contains(static_cast<SDL_GamepadButton>(event->gbutton.button)))
+  {
+    return;
+  }
+  VirtualDevice::Action action = this->keymap.at(static_cast<SDL_GamepadButton>(event->gbutton.button));
+  if (action.device == VirtualDevice::MOUSE)
+  {
+    virtual_mouse->do_key_action(action, event->gbutton.down);
+  }
+  else if (action.device == VirtualDevice::KEYBOARD)
+  {
+    virtual_keyboard->do_key_action(action, event->gbutton.down);
+  }
+}
+
+void GamepadController::process_joysticks()
+{
+  // Process joystick movement
+  float x = (float)(SDL_GetGamepadAxis(this->gamepad, this->mouse_x_axis)) / ANALOG_MAX_VALUE;
+  float y = (float)(SDL_GetGamepadAxis(this->gamepad, this->mouse_y_axis)) / ANALOG_MAX_VALUE;
+  float mag = sqrt(x * x + y * y);
+  if (mag > 1.0f)
+  {
+    x /= mag;
+    y /= mag;
+  }
+  virtual_mouse->moveMouseRelativeXY(x, y);
+}
+
+SDL_Gamepad *GamepadController::get_gamepad()
+{
+  return this->gamepad;
+}
+SDL_JoystickID GamepadController::get_gamepad_id()
+{
+  return this->gamepad_id;
+}
+
+void GamepadController::save_config()
+{
+  std::fstream config_file = std::fstream(this->gamepad_config_path, std::fstream::out);
+  if (!config_file.is_open())
+  {
+    std::cerr << "Unable to open config file for writing: " << this->gamepad_config_path.filename() << std::endl;
+    return;
+  }
+  config_file << "SENSITIVITY=" << std::to_string(this->virtual_mouse->get_sensitivity()) << '\n';
+  config_file << "MOUSE_JOY=" << (this->mouse_x_axis == SDL_GAMEPAD_AXIS_LEFTX ? "LEFT" : "RIGHT") << '\n';
+  for (auto keybind : this->keymap)
+  {
+    if (keybind.second.device == VirtualDevice::KEYBOARD)
+    {
+      auto it = std::find_if(VirtualKeyboard::parser.begin(), VirtualKeyboard::parser.end(), [&](const std::pair<std::string, VirtualDevice::Action> pair)
+                             { return pair.second == keybind.second; });
+      if (it != VirtualKeyboard::parser.end())
+      {
+        std::string value = "KEYBOARD_" + it->first;
+        config_file << std::to_string(keybind.first) << "=" << value << '\n';
+      }
+    }
+    if (keybind.second.device == VirtualDevice::MOUSE)
+    {
+      auto it = std::find_if(VirtualMouse::parser.begin(), VirtualMouse::parser.end(), [&](const std::pair<std::string, VirtualDevice::Action> pair)
+                             { return pair.second == keybind.second; });
+      if (it != VirtualMouse::parser.end())
+      {
+        std::string value = "MOUSE_" + it->first;
+        config_file << std::to_string(keybind.first) << "=" << value << '\n';
+      }
+    }
+  }
+  config_file.close();
+}
+
+void GamepadController::load_config()
+{
+  std::fstream config_file = std::fstream(this->gamepad_config_path, std::fstream::in);
   if (!config_file.is_open())
   {
     config_file = std::fstream("./default_config.cfg", std::fstream::in);
@@ -30,15 +114,14 @@ GamepadController::GamepadController(VirtualMouse *vm, VirtualKeyboard *vk, SDL_
     this->mouse_x_axis = SDL_GAMEPAD_AXIS_LEFTX;
     this->mouse_y_axis = SDL_GAMEPAD_AXIS_LEFTY;
     std::cout << "Using default config" << std::endl;
-    // No config file found: attempt to create one with defaults
     try
     {
       this->save_config();
-      std::cout << "Created default config: " << this->gamepad_config_name << std::endl;
+      std::cout << "Created default config: " << this->gamepad_config_path.filename() << " using a basic config" << std::endl;
     }
     catch (...)
     {
-      std::cerr << "Failed to create default config file: " << this->gamepad_config_name << std::endl;
+      std::cerr << "Failed to create default config file: " << this->gamepad_config_path.filename() << std::endl;
     }
     return;
   }
@@ -111,83 +194,6 @@ GamepadController::GamepadController(VirtualMouse *vm, VirtualKeyboard *vk, SDL_
         {
           std::cerr << "Key value out of range in config: '" << key << "' - skipping line" << std::endl;
         }
-      }
-    }
-  }
-  config_file.close();
-  this->save_config();
-}
-
-void GamepadController::process_key_event(SDL_Event *event)
-{
-  if (event->gbutton.which != this->gamepad_id || !this->keymap.contains(static_cast<SDL_GamepadButton>(event->gbutton.button)))
-  {
-    return;
-  }
-  VirtualDevice::Action action = this->keymap.at(static_cast<SDL_GamepadButton>(event->gbutton.button));
-  if (action.device == VirtualDevice::MOUSE)
-  {
-    virtual_mouse->do_key_action(action, event->gbutton.down);
-  }
-  else if (action.device == VirtualDevice::KEYBOARD)
-  {
-    virtual_keyboard->do_key_action(action, event->gbutton.down);
-  }
-}
-
-void GamepadController::process_joysticks()
-{
-  // Process joystick movement
-  float x = (float)(SDL_GetGamepadAxis(this->gamepad, this->mouse_x_axis)) / ANALOG_MAX_VALUE;
-  float y = (float)(SDL_GetGamepadAxis(this->gamepad, this->mouse_y_axis)) / ANALOG_MAX_VALUE;
-  float mag = sqrt(x * x + y * y);
-  if (mag > 1.0f)
-  {
-    x /= mag;
-    y /= mag;
-  }
-  virtual_mouse->moveMouseRelativeXY(x, y);
-}
-
-SDL_Gamepad *GamepadController::get_gamepad()
-{
-  return this->gamepad;
-}
-SDL_JoystickID GamepadController::get_gamepad_id()
-{
-  return this->gamepad_id;
-}
-
-void GamepadController::save_config()
-{
-  std::fstream config_file = std::fstream(this->gamepad_config_name, std::fstream::out);
-  if (!config_file.is_open())
-  {
-    std::cerr << "Unable to open config file for writing: " << this->gamepad_config_name << std::endl;
-    return;
-  }
-  config_file << "SENSITIVITY=" << std::to_string(this->virtual_mouse->get_sensitivity()) << '\n';
-  config_file << "MOUSE_JOY=" << (this->mouse_x_axis == SDL_GAMEPAD_AXIS_LEFTX ? "LEFT" : "RIGHT") << '\n';
-  for (auto keybind : this->keymap)
-  {
-    if (keybind.second.device == VirtualDevice::KEYBOARD)
-    {
-      auto it = std::find_if(VirtualKeyboard::parser.begin(), VirtualKeyboard::parser.end(), [&](const std::pair<std::string, VirtualDevice::Action> pair)
-                             { return pair.second == keybind.second; });
-      if (it != VirtualKeyboard::parser.end())
-      {
-        std::string value = "KEYBOARD_" + it->first;
-        config_file << std::to_string(keybind.first) << "=" << value << '\n';
-      }
-    }
-    if (keybind.second.device == VirtualDevice::MOUSE)
-    {
-      auto it = std::find_if(VirtualMouse::parser.begin(), VirtualMouse::parser.end(), [&](const std::pair<std::string, VirtualDevice::Action> pair)
-                             { return pair.second == keybind.second; });
-      if (it != VirtualMouse::parser.end())
-      {
-        std::string value = "MOUSE_" + it->first;
-        config_file << std::to_string(keybind.first) << "=" << value << '\n';
       }
     }
   }
