@@ -3,6 +3,8 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QButtonGroup>
+#include <QtWidgets/QStackedWidget>
+#include "GamepadController.hpp"
 
 static QWidget *create_controller_config_menu(AppWindow *app_window, GamepadController *controller);
 static QWidget *create_main_menu(AppWindow *app_window);
@@ -15,7 +17,8 @@ static QWidget *create_controller_config_menu(AppWindow *app_window, GamepadCont
   config_layout->addWidget(label);
   QPushButton *btn = new QPushButton("Back", controller_config_widget);
   QObject::connect(btn, &QPushButton::clicked, [app_window]()
-                   { app_window->get_main_window()->setCentralWidget(create_main_menu(app_window)); });
+                   { app_window->get_stack()->removeWidget(app_window->get_current_config_menu());
+                      app_window->get_stack()->setCurrentWidget(app_window->get_main_menu()); });
   config_layout->addStretch(1);
   config_layout->addWidget(btn);
   return controller_config_widget;
@@ -38,8 +41,9 @@ static QWidget *create_main_menu(AppWindow *app_window)
       QPushButton *btn = new QPushButton(QString::fromStdString(SDL_GetGamepadName(controller->get_gamepad())), menu_widget);
       QObject::connect(btn, &QPushButton::clicked, [app_window, controller]()
                        {
-        QWidget *new_w = create_controller_config_menu(app_window, controller);
-        app_window->get_main_window()->setCentralWidget(new_w); });
+        app_window->set_current_config_menu(create_controller_config_menu(app_window, controller));
+        app_window->get_stack()->addWidget(app_window->get_current_config_menu());
+      app_window->get_stack()->setCurrentWidget(app_window->get_current_config_menu()); });
       menu_layout->addWidget(btn);
     }
     menu_layout->addStretch(1);
@@ -55,16 +59,21 @@ AppWindow::AppWindow(int &argc, char **argv, ControllersHandler *handler)
   this->main_window->setWindowTitle("GamepadInput");
   this->main_window->resize(QSize(400, 600));
   this->main_window->setContentsMargins(QMargins(20, 20, 20, 20));
+  this->stack = new QStackedWidget(this->main_window);
 
   this->main_menu = create_main_menu(this);
-  this->main_window->setCentralWidget(this->main_menu);
+  this->stack->addWidget(this->main_menu);
+  this->stack->setCurrentWidget(this->main_menu);
+  this->main_window->setCentralWidget(this->stack);
   this->main_window->show();
 }
 
 void AppWindow::update_menu()
 {
+  this->stack->removeWidget(this->main_menu);
   this->main_menu = create_main_menu(this);
-  this->main_window->setCentralWidget(this->main_menu);
+  this->stack->addWidget(this->main_menu);
+  this->stack->setCurrentWidget(this->main_menu);
 }
 
 void AppWindow::run()
@@ -85,6 +94,26 @@ QMainWindow *AppWindow::get_main_window()
 ControllersHandler *AppWindow::get_gamepad_controllers_handler()
 {
   return this->gamepad_controllers_handler;
+}
+
+QWidget *AppWindow::get_main_menu()
+{
+  return this->main_menu;
+}
+
+QStackedWidget *AppWindow::get_stack()
+{
+  return this->stack;
+}
+
+QWidget *AppWindow::get_current_config_menu()
+{
+  return this->current_config_menu;
+}
+
+void AppWindow::set_current_config_menu(QWidget *w)
+{
+  this->current_config_menu = w;
 }
 
 AppWindow::~AppWindow()
