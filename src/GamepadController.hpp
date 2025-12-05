@@ -1,20 +1,19 @@
 #ifndef GamepadController_h
 #define GamepadController_h
 
-#include "SDL3/SDL_gamepad.h"
 #include "SDL3/SDL.h"
+#include "SDL3/SDL_gamepad.h"
+#include "VirtualDevice.hpp"
+#include "VirtualKeyboard.hpp"
+#include "VirtualMouse.hpp"
+#include <filesystem>
 #include <map>
 #include <string>
-#include <filesystem>
-#include "VirtualDevice.hpp"
-#include "VirtualMouse.hpp"
-#include "VirtualKeyboard.hpp"
 
 #define ANALOG_MAX_VALUE 32767;
 #define DEFAULT_CONFIG_ROUTE "./default_config.cfg";
 
-class GamepadController
-{
+class GamepadController {
 private:
   VirtualMouse *virtual_mouse;
   VirtualKeyboard *virtual_keyboard;
@@ -32,6 +31,8 @@ public:
   SDL_Gamepad *get_gamepad();
   SDL_JoystickID get_gamepad_id();
   void add_keybind(SDL_GamepadButton gp_btn, VirtualDevice::Action act);
+  void set_sensitivity(float sens);
+  float get_sensitivity();
   void save_config();
   void load_config();
 };

@@ -1,12 +1,12 @@
 #ifndef APPWINDOW_H
 #define APPWINDOW_H
-#include <QtWidgets/QMainWindow>
-#include <QtWidgets/QApplication>
-#include <QtWidgets/QStackedWidget>
+#include "./ui/ControllersList.hpp"
 #include "ControllersHandler.hpp"
+#include <QtWidgets/QApplication>
+#include <QtWidgets/QMainWindow>
+#include <QtWidgets/QStackedWidget>
 
-class AppWindow
-{
+class AppWindow {
 private:
   QApplication *app;
   QMainWindow *main_window;

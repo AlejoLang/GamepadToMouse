@@ -1,6 +1,6 @@
-#include "SDL3/SDL.h"
 #include "AppWindow.hpp"
 #include "ControllersHandler.hpp"
+#include "SDL3/SDL.h"
 #include <QtCore/QTimer>
 #include <filesystem>
 
@@ -8,14 +8,13 @@
 
 void process_gamepad_events(AppWindow *app, ControllersHandler *handler);
 
-extern const std::filesystem::path config_path = std::filesystem::path(std::getenv("HOME")) / ".config" / "ControllerMouse";
+extern const std::filesystem::path config_path =
+    std::filesystem::path(std::getenv("HOME")) / ".config" / "ControllerMouse";
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   SDL_Init(SDL_INIT_GAMEPAD | SDL_INIT_JOYSTICK);
 
-  if (!std::filesystem::exists(config_path))
-  {
+  if (!std::filesystem::exists(config_path)) {
     std::filesystem::create_directories(config_path);
   }
 
@@ -23,13 +22,12 @@ int main(int argc, char *argv[])
   AppWindow *app = new AppWindow(argc, argv, gamepads_controller_handler);
 
   QTimer *timer = new QTimer();
-  QObject::connect(timer, &QTimer::timeout, [&]()
-                   {
+  QObject::connect(timer, &QTimer::timeout, [&]() {
     process_gamepad_events(app, gamepads_controller_handler);
-    if (gamepads_controller_handler->get_current_controller() != nullptr)
-    {
+    if (gamepads_controller_handler->get_current_controller() != nullptr) {
       gamepads_controller_handler->get_current_controller()->process_joysticks();
-    } });
+    }
+  });
 
   timer->start(4);
   app->run();
@@ -40,29 +38,23 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-void process_gamepad_events(AppWindow *app, ControllersHandler *handler)
-{
+void process_gamepad_events(AppWindow *app, ControllersHandler *handler) {
   SDL_Event new_event;
   bool has_event = SDL_PollEvent(&new_event);
-  while (has_event)
-  {
-    switch (new_event.type)
-    {
-    case SDL_EVENT_GAMEPAD_ADDED:
-    {
+  while (has_event) {
+    switch (new_event.type) {
+    case SDL_EVENT_GAMEPAD_ADDED: {
       handler->add_controller(new_event.gdevice.which);
       app->update_menu();
       break;
     }
-    case SDL_EVENT_GAMEPAD_REMOVED:
-    {
+    case SDL_EVENT_GAMEPAD_REMOVED: {
       handler->remove_controller(new_event.gdevice.which);
       app->update_menu();
       break;
     }
     case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
-    case SDL_EVENT_GAMEPAD_BUTTON_UP:
-    {
+    case SDL_EVENT_GAMEPAD_BUTTON_UP: {
       handler->get_current_controller()->process_key_event(&new_event);
       break;
     }

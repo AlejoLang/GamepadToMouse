@@ -1,12 +1,11 @@
 #include "VirtualMouse.hpp"
-#include <unistd.h>
+#include <cmath>
+#include <cstring>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include <cstring>
-#include <cmath>
+#include <unistd.h>
 
-VirtualMouse::VirtualMouse(std::string name, int vendor_id, int product_id)
-{
+VirtualMouse::VirtualMouse(std::string name, int vendor_id, int product_id) {
   this->sensitivity = 0.2;
   struct uinput_setup usetup;
 
@@ -31,10 +30,8 @@ VirtualMouse::VirtualMouse(std::string name, int vendor_id, int product_id)
   ioctl(this->device_file, UI_DEV_CREATE);
 }
 
-void VirtualMouse::moveMouseRelativeXY(float dx, float dy)
-{
-  if (!dx && !dy)
-  {
+void VirtualMouse::moveMouseRelativeXY(float dx, float dy) {
+  if (!dx && !dy) {
     return;
   }
   this->emit_event(EV_REL, REL_X, 50 * dx * this->sensitivity);
@@ -42,13 +39,11 @@ void VirtualMouse::moveMouseRelativeXY(float dx, float dy)
   this->send_sync_report();
 }
 
-void VirtualMouse::set_sensitivity(float value)
-{
+void VirtualMouse::set_sensitivity(float value) {
   // Clamp value to [0.0, 1.0]
   this->sensitivity = std::max(0.0f, std::min(value, 1.0f));
 }
 
-float VirtualMouse::get_sensitivity()
-{
+float VirtualMouse::get_sensitivity() {
   return this->sensitivity;
 }

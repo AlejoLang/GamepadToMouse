@@ -1,12 +1,11 @@
 #ifndef CONTROLLERSHANDLER_H
 #define CONTROLLERSHANDLER_H
 #include "GamepadController.hpp"
-#include "VirtualMouse.hpp"
 #include "VirtualKeyboard.hpp"
+#include "VirtualMouse.hpp"
 #include <vector>
 
-class ControllersHandler
-{
+class ControllersHandler {
 private:
   VirtualMouse *virtual_mouse;
   VirtualKeyboard *virtual_keyboard;

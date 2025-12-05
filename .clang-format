@@ -1,0 +1,16 @@
+Language: Cpp
+BasedOnStyle: Microsoft
+IndentWidth: 2
+TabWidth: 2
+UseTab: Never
+BreakBeforeBraces: Custom
+BraceWrapping:
+    AfterClass: false
+    AfterControlStatement: false
+    AfterEnum: false
+    AfterFunction: false
+    AfterNamespace: false
+    AfterStruct: false
+    BeforeElse: false
+    SplitEmptyFunction: false
+

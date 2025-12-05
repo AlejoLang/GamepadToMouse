@@ -1,19 +1,17 @@
 #include "VirtualKeyboard.hpp"
-#include <unistd.h>
+#include <cstring>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include <cstring>
+#include <unistd.h>
 
-VirtualKeyboard::VirtualKeyboard(std::string name, int vendor_id, int product_id)
-{
+VirtualKeyboard::VirtualKeyboard(std::string name, int vendor_id, int product_id) {
   struct uinput_setup usetup;
 
   /* enable keyboard events */
   ioctl(this->device_file, UI_SET_EVBIT, EV_KEY);
 
   /* enable all keyboard keys */
-  for (int i = KEY_ESC; i < KEY_MAX; i++)
-  {
+  for (int i = KEY_ESC; i < KEY_MAX; i++) {
     ioctl(this->device_file, UI_SET_KEYBIT, i);
   }
 

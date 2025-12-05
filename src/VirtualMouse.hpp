@@ -2,19 +2,16 @@
 #define VirtualMouse_h
 #include "VirtualDevice.hpp"
 #include <linux/uinput.h>
-#include <string>
 #include <map>
+#include <string>
 
-class VirtualMouse : public VirtualDevice
-{
+class VirtualMouse : public VirtualDevice {
 private:
   float sensitivity;
 
 public:
-  struct MouseKeyAction : VirtualDevice::Action
-  {
-    MouseKeyAction(int key)
-    {
+  struct MouseKeyAction : VirtualDevice::Action {
+    MouseKeyAction(int key) {
       this->device = VirtualDevice::MOUSE;
       this->type = EV_KEY;
       this->key = key;

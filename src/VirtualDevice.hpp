@@ -3,28 +3,23 @@
 
 #define UINPUT_DEVICE_PATH "/dev/uinput"
 
-class VirtualDevice
-{
+class VirtualDevice {
 protected:
   int device_file;
 
 public:
-  enum DeviceType
-  {
+  enum DeviceType {
     MOUSE,
     KEYBOARD
   };
-  struct Action
-  {
+  struct Action {
     DeviceType device;
     int type;
     int key;
-    bool operator==(Action const &a) const
-    {
+    bool operator==(Action const &a) const {
       return (this->device == a.device && this->type == a.type && this->key == a.key);
     }
-    bool operator!=(Action const &a) const
-    {
+    bool operator!=(Action const &a) const {
       return !(*this == a);
     }
   };
