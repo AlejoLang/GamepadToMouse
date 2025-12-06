@@ -25,6 +25,14 @@ private:
   SDL_GamepadAxis mouse_y_axis = SDL_GAMEPAD_AXIS_LEFTY;
 
 public:
+  struct ParsingItem {
+    SDL_GamepadButton button;
+    std::string save_name;
+    std::string icon_name_xbox;
+    std::string icon_name_ps;
+  };
+
+public:
   GamepadController(VirtualMouse *vm, VirtualKeyboard *vk, SDL_Gamepad *gp);
   void process_key_event(SDL_Event *event);
   void process_joysticks();
@@ -35,6 +43,9 @@ public:
   float get_sensitivity();
   void save_config();
   void load_config();
+  std::string get_button_icon(SDL_GamepadButton btn);
+  SDL_GamepadButton get_binded_button_for_action(VirtualDevice::Action act);
+  std::string get_binded_icon_for_action(VirtualDevice::Action act);
 };
 
 #endif

@@ -15,14 +15,20 @@ static const std::map<SDL_GamepadButton, VirtualDevice::Action> basic_default_on
     {SDL_GAMEPAD_BUTTON_DPAD_LEFT, VirtualKeyboard::KEY_LEFT_ACTION}};
 extern const std::filesystem::path config_path;
 
-static const std::map<SDL_GamepadButton, std::string> gamepad_parser = {
-    {SDL_GAMEPAD_BUTTON_DPAD_DOWN, "DPAD_DOWN"},   {SDL_GAMEPAD_BUTTON_DPAD_LEFT, "DPAD_LEFT"},
-    {SDL_GAMEPAD_BUTTON_DPAD_RIGHT, "DPAD_RIGHT"}, {SDL_GAMEPAD_BUTTON_DPAD_UP, "DPAD_UP"},
-    {SDL_GAMEPAD_BUTTON_SOUTH, "BTN_SOUTH"},       {SDL_GAMEPAD_BUTTON_EAST, "BTN_EAST"},
-    {SDL_GAMEPAD_BUTTON_NORTH, "BTN_NORTH"},       {SDL_GAMEPAD_BUTTON_WEST, "BTN_WEST"},
-    {SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, "BTN_LB"},  {SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, "BTN_RB"},
-    {SDL_GAMEPAD_BUTTON_GUIDE, "BTN_GUIDE"},       {SDL_GAMEPAD_BUTTON_START, "BTN_START"},
-    {SDL_GAMEPAD_BUTTON_BACK, "BTN_BACK"}};
+static const std::vector<GamepadController::ParsingItem> gamepad_parser = {
+    {SDL_GAMEPAD_BUTTON_DPAD_UP, "DPAD_UP", "button_xbox_digital_dpad_up", "button_ps_digital_dpad_up"},
+    {SDL_GAMEPAD_BUTTON_DPAD_DOWN, "DPAD_DOWN", "button_xbox_digital_dpad_down", "button_ps_digital_dpad_down"},
+    {SDL_GAMEPAD_BUTTON_DPAD_LEFT, "DPAD_LEFT", "button_xbox_digital_dpad_left", "button_ps_digital_dpad_left"},
+    {SDL_GAMEPAD_BUTTON_DPAD_RIGHT, "DPAD_RIGHT", "button_xbox_digital_dpad_right", "button_ps_digital_dpad_left"},
+    {SDL_GAMEPAD_BUTTON_SOUTH, "BTN_SOUTH", "button_xbox_digital_a", "button_ps_digital_cross"},
+    {SDL_GAMEPAD_BUTTON_EAST, "BTN_EAST", "button_xbox_digital_b", "button_ps_digital_circle"},
+    {SDL_GAMEPAD_BUTTON_NORTH, "BTN_NORTH", "button_xbox_digital_y", "button_ps_digital_triangle"},
+    {SDL_GAMEPAD_BUTTON_WEST, "BTN_WEST", "button_xbox_digital_x", "button_ps_digital_square"},
+    {SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, "BTN_RB", "button_xbox_digital_bumper_r", "button_ps_digital_bumper_r"},
+    {SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, "BTN_LB", "button_xbox_digital_bumper_l", "button_ps_digital_bumper_r"},
+    {SDL_GAMEPAD_BUTTON_START, "BTN_START", "button_xbox_digital_menu", "button_ps_digital_options"},
+    {SDL_GAMEPAD_BUTTON_BACK, "BTN_BACK", "button_xbox_digital_view", "button_ps_digital_share"},
+    {SDL_GAMEPAD_BUTTON_GUIDE, "BTN_GUIDE", "button_xbox_digital_home", "button_ps_digital_home"}};
 
 GamepadController::GamepadController(VirtualMouse *vm, VirtualKeyboard *vk, SDL_Gamepad *gp) {
   this->gamepad = gp;
@@ -84,7 +90,9 @@ void GamepadController::save_config() {
   config_file << "SENSITIVITY=" << std::to_string(this->virtual_mouse->get_sensitivity()) << '\n';
   config_file << "MOUSE_JOY=" << (this->mouse_x_axis == SDL_GAMEPAD_AXIS_LEFTX ? "LEFT" : "RIGHT") << '\n';
   for (auto keybind : this->keymap) {
-    auto it_gp_parser = gamepad_parser.find(keybind.first);
+    auto it_gp_parser =
+        std::find_if(gamepad_parser.begin(), gamepad_parser.end(),
+                     [&](const GamepadController::ParsingItem &pi) { return pi.button == keybind.first; });
     if (it_gp_parser == gamepad_parser.end()) {
       continue;
     }
@@ -94,7 +102,7 @@ void GamepadController::save_config() {
                        [&](const VirtualDevice::ParsingItem &pi) { return pi.action == keybind.second; });
       if (it_kb_parser != VirtualKeyboard::parser.end()) {
         std::string value = "KEYBOARD_" + it_kb_parser->save_string;
-        config_file << it_gp_parser->second << "=" << value << '\n';
+        config_file << it_gp_parser->save_name << "=" << value << '\n';
       }
     }
     if (keybind.second.device == VirtualDevice::MOUSE) {
@@ -102,7 +110,7 @@ void GamepadController::save_config() {
                                    [&](const VirtualDevice::ParsingItem &pi) { return pi.action == keybind.second; });
       if (it_value != VirtualMouse::parser.end()) {
         std::string value = "MOUSE_" + it_value->save_string;
-        config_file << it_gp_parser->second << "=" << value << '\n';
+        config_file << it_gp_parser->save_name << "=" << value << '\n';
       }
     }
   }
@@ -163,10 +171,10 @@ void GamepadController::load_config() {
         }
       } else {
         try {
-          auto it_gp_parser = std::find_if(
-              gamepad_parser.begin(), gamepad_parser.end(),
-              [&](const std::pair<SDL_GamepadButton, std::string> pair) { return pair.second == config_key; });
-          SDL_GamepadButton gp_btn = it_gp_parser->first;
+          auto it_gp_parser =
+              std::find_if(gamepad_parser.begin(), gamepad_parser.end(),
+                           [&](const GamepadController::ParsingItem &pi) { return pi.save_name == config_key; });
+          SDL_GamepadButton gp_btn = it_gp_parser->button;
           size_t dev_key_limiter = config_value.find('_');
           std::string device =
               (dev_key_limiter == std::string::npos) ? config_value : config_value.substr(0, dev_key_limiter);
@@ -192,4 +200,29 @@ void GamepadController::load_config() {
     }
   }
   config_file.close();
+}
+
+std::string GamepadController::get_button_icon(SDL_GamepadButton btn) {
+
+  auto it_gp_parser = std::find_if(gamepad_parser.begin(), gamepad_parser.end(),
+                                   [&](const GamepadController::ParsingItem &pi) { return pi.button == btn; });
+  if (it_gp_parser == gamepad_parser.end()) {
+    return "";
+  }
+  return "./assets/" + (SDL_GetGamepadType(this->gamepad) == SDL_GAMEPAD_TYPE_STANDARD ? it_gp_parser->icon_name_xbox
+                                                                                       : it_gp_parser->icon_name_ps);
+}
+
+SDL_GamepadButton GamepadController::get_binded_button_for_action(VirtualDevice::Action act) {
+  auto it_keybind =
+      std::find_if(this->keymap.begin(), this->keymap.end(),
+                   [&](const std::pair<SDL_GamepadButton, VirtualDevice::Action> pair) { return pair.second == act; });
+  if (it_keybind == this->keymap.end()) {
+    return static_cast<SDL_GamepadButton>(-1);
+  }
+  return it_keybind->first;
+}
+
+std::string GamepadController::get_binded_icon_for_action(VirtualDevice::Action act) {
+  return this->get_button_icon(this->get_binded_button_for_action(act));
 }
