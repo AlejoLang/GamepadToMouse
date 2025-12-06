@@ -6,4 +6,6 @@ qt_add_executable(${PROJECT_NAME}
   GamepadController.cpp
   ControllersHandler.cpp
   AppWindow.cpp
+  ui/ControllersListPage.cpp
+  ui/GamepadConfigPage.cpp
 )

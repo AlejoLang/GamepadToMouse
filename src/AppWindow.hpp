@@ -1,7 +1,8 @@
 #ifndef APPWINDOW_H
 #define APPWINDOW_H
-#include "./ui/ControllersList.hpp"
 #include "ControllersHandler.hpp"
+#include "ui/ControllersListPage.hpp"
+#include "ui/GamepadConfigPage.hpp"
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QStackedWidget>
@@ -10,8 +11,8 @@ class AppWindow {
 private:
   QApplication *app;
   QMainWindow *main_window;
-  QWidget *main_menu;
-  QWidget *current_config_menu;
+  ControllersListPage *controllers_list;
+  GamepadConfigPage *config_page;
   QStackedWidget *stack;
   ControllersHandler *gamepad_controllers_handler;
 
@@ -22,10 +23,8 @@ public:
   QApplication *get_app();
   QMainWindow *get_main_window();
   ControllersHandler *get_gamepad_controllers_handler();
-  QWidget *get_main_menu();
+  QWidget *get_controllers_list();
   QStackedWidget *get_stack();
-  QWidget *get_current_config_menu();
-  void set_current_config_menu(QWidget *w);
   ~AppWindow();
 };
 #endif
