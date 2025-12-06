@@ -1,6 +1,6 @@
 #ifndef VirtualDevice_h
 #define VirtualDevice_h
-
+#include <string>
 #define UINPUT_DEVICE_PATH "/dev/uinput"
 
 class VirtualDevice {
@@ -22,6 +22,11 @@ public:
     bool operator!=(Action const &a) const {
       return !(*this == a);
     }
+  };
+  struct ParsingItem {
+    Action action;
+    std::string save_string;
+    std::string display_string;
   };
 
 public:
