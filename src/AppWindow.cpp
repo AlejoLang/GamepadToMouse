@@ -25,6 +25,8 @@ AppWindow::AppWindow(int &argc, char **argv, ControllersHandler *handler) {
                      QObject::connect(this->config_page, &GamepadConfigPage::backPressed, [this]() {
                        this->stack->removeWidget(this->config_page);
                        this->stack->setCurrentWidget(this->controllers_list);
+                       this->config_page->deleteLater();
+                       this->config_page = nullptr;
                      });
                    });
 
