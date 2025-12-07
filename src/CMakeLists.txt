@@ -8,4 +8,5 @@ qt_add_executable(${PROJECT_NAME}
   AppWindow.cpp
   ui/ControllersListPage.cpp
   ui/GamepadConfigPage.cpp
+  ui/JoystickSelector.cpp
 )

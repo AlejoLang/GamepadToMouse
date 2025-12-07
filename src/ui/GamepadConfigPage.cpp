@@ -1,4 +1,5 @@
 #include "GamepadConfigPage.hpp"
+#include "JoystickSelector.hpp"
 #include <QLabel>
 #include <QPushButton>
 #include <QScrollArea>
@@ -54,6 +55,20 @@ void GamepadConfigPage::refresh() {
   });
   slider_layout->addWidget(sens_slider);
   layout->addLayout(slider_layout);
+
+  JoystickSelector *joy_sel = new JoystickSelector(this);
+  for (auto gp_joy : this->m_gamepad_controller->get_joystick_parsing_items()) {
+    std::string icon_path =
+        "./assets/" + (SDL_GetGamepadType(this->m_gamepad_controller->get_gamepad()) == SDL_GAMEPAD_TYPE_STANDARD
+                           ? gp_joy.icon_name_xbox
+                           : gp_joy.icon_name_ps);
+    QIcon *joy_icon = new QIcon(QString::fromStdString(icon_path));
+    joy_sel->add_joystick(gp_joy.joystick, joy_icon);
+  }
+  joy_sel->set_current_joystick(this->m_gamepad_controller->get_mouse_joystick());
+  QObject::connect(joy_sel, &JoystickSelector::joystickChanged,
+                   [this](GamepadController::Joystick joy) { this->m_gamepad_controller->set_mouse_joystick(joy); });
+  layout->addWidget(joy_sel);
 
   QScrollArea *mouse_buttons_frame = new QScrollArea(this);
   mouse_buttons_frame->setWidgetResizable(true);
