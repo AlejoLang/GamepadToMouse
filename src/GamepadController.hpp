@@ -14,6 +14,27 @@
 #define DEFAULT_CONFIG_ROUTE "./default_config.cfg";
 
 class GamepadController {
+public:
+  struct Joystick {
+    SDL_GamepadAxis X;
+    SDL_GamepadAxis Y;
+    bool operator==(const Joystick &joy) {
+      return this->X == joy.X && this->Y == joy.Y;
+    }
+  };
+  struct ParsingItem {
+    SDL_GamepadButton button;
+    std::string save_name;
+    std::string icon_name_xbox;
+    std::string icon_name_ps;
+  };
+  struct JoystickParsingItem {
+    Joystick joystick;
+    std::string save_name;
+    std::string icon_name_xbox;
+    std::string icon_name_ps;
+  };
+
 private:
   VirtualMouse *virtual_mouse;
   VirtualKeyboard *virtual_keyboard;
@@ -21,16 +42,7 @@ private:
   SDL_JoystickID gamepad_id;
   std::map<SDL_GamepadButton, VirtualDevice::Action> keymap;
   std::filesystem::path gamepad_config_path;
-  SDL_GamepadAxis mouse_x_axis = SDL_GAMEPAD_AXIS_LEFTX;
-  SDL_GamepadAxis mouse_y_axis = SDL_GAMEPAD_AXIS_LEFTY;
-
-public:
-  struct ParsingItem {
-    SDL_GamepadButton button;
-    std::string save_name;
-    std::string icon_name_xbox;
-    std::string icon_name_ps;
-  };
+  Joystick mouse_joystick;
 
 public:
   GamepadController(VirtualMouse *vm, VirtualKeyboard *vk, SDL_Gamepad *gp);
@@ -41,11 +53,14 @@ public:
   void add_keybind(SDL_GamepadButton gp_btn, VirtualDevice::Action act);
   void set_sensitivity(float sens);
   float get_sensitivity();
+  void set_mouse_joystick(Joystick joystick);
+  Joystick get_mouse_joystick();
   void save_config();
   void load_config();
   std::string get_button_icon(SDL_GamepadButton btn);
   SDL_GamepadButton get_binded_button_for_action(VirtualDevice::Action act);
   std::string get_binded_icon_for_action(VirtualDevice::Action act);
+  std::vector<GamepadController::JoystickParsingItem> get_joystick_parsing_items();
 };
 
 #endif

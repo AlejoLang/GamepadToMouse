@@ -30,10 +30,15 @@ static const std::vector<GamepadController::ParsingItem> gamepad_parser = {
     {SDL_GAMEPAD_BUTTON_BACK, "BTN_BACK", "button_xbox_digital_view", "button_ps_digital_share"},
     {SDL_GAMEPAD_BUTTON_GUIDE, "BTN_GUIDE", "button_xbox_digital_home", "button_ps_digital_home"}};
 
+static const std::vector<GamepadController::JoystickParsingItem> gamepad_joystick_parser = {
+    {{SDL_GAMEPAD_AXIS_LEFTX, SDL_GAMEPAD_AXIS_LEFTY}, "LEFT", "button_xbox_analog_l", "button_ps_analog_l"},
+    {{SDL_GAMEPAD_AXIS_RIGHTX, SDL_GAMEPAD_AXIS_RIGHTY}, "RIGHT", "button_xbox_analog_r", "button_ps_analog_r"}};
+
 GamepadController::GamepadController(VirtualMouse *vm, VirtualKeyboard *vk, SDL_Gamepad *gp) {
   this->gamepad = gp;
   this->virtual_keyboard = vk;
   this->virtual_mouse = vm;
+  this->mouse_joystick = {SDL_GAMEPAD_AXIS_LEFTX, SDL_GAMEPAD_AXIS_LEFTY};
   this->gamepad_id = gp ? SDL_GetGamepadID(gp) : 0;
   std::string gamepad_config_name = "./" + std::string(SDL_GetGamepadName(gp)) + "_" +
                                     std::to_string(SDL_GetGamepadVendor(gp)) + "_" +
@@ -57,8 +62,8 @@ void GamepadController::process_key_event(SDL_Event *event) {
 
 void GamepadController::process_joysticks() {
   // Process joystick movement
-  float x = (float)(SDL_GetGamepadAxis(this->gamepad, this->mouse_x_axis)) / ANALOG_MAX_VALUE;
-  float y = (float)(SDL_GetGamepadAxis(this->gamepad, this->mouse_y_axis)) / ANALOG_MAX_VALUE;
+  float x = (float)(SDL_GetGamepadAxis(this->gamepad, this->mouse_joystick.X)) / ANALOG_MAX_VALUE;
+  float y = (float)(SDL_GetGamepadAxis(this->gamepad, this->mouse_joystick.Y)) / ANALOG_MAX_VALUE;
   float mag = sqrt(x * x + y * y);
   if (mag > 1.0f) {
     x /= mag;
@@ -81,6 +86,13 @@ float GamepadController::get_sensitivity() {
   return this->virtual_mouse->get_sensitivity();
 }
 
+void GamepadController::set_mouse_joystick(GamepadController::Joystick joystick) {
+  this->mouse_joystick = joystick;
+}
+GamepadController::Joystick GamepadController::get_mouse_joystick() {
+  return this->mouse_joystick;
+}
+
 void GamepadController::save_config() {
   std::fstream config_file = std::fstream(this->gamepad_config_path, std::fstream::out);
   if (!config_file.is_open()) {
@@ -88,7 +100,13 @@ void GamepadController::save_config() {
     return;
   }
   config_file << "SENSITIVITY=" << std::to_string(this->virtual_mouse->get_sensitivity()) << '\n';
-  config_file << "MOUSE_JOY=" << (this->mouse_x_axis == SDL_GAMEPAD_AXIS_LEFTX ? "LEFT" : "RIGHT") << '\n';
+
+  auto it_joy_parser = std::find_if(
+      gamepad_joystick_parser.begin(), gamepad_joystick_parser.end(),
+      [&](const GamepadController::JoystickParsingItem pi) { return pi.joystick == this->mouse_joystick; });
+
+  config_file << "MOUSE_JOY=" << (it_joy_parser != gamepad_joystick_parser.end() ? it_joy_parser->save_name : "")
+              << '\n';
   for (auto keybind : this->keymap) {
     auto it_gp_parser =
         std::find_if(gamepad_parser.begin(), gamepad_parser.end(),
@@ -124,8 +142,8 @@ void GamepadController::load_config() {
   }
   if (!config_file.is_open()) {
     this->keymap = basic_default_only_error_mapping;
-    this->mouse_x_axis = SDL_GAMEPAD_AXIS_LEFTX;
-    this->mouse_y_axis = SDL_GAMEPAD_AXIS_LEFTY;
+    this->mouse_joystick = {SDL_GAMEPAD_AXIS_LEFTX, SDL_GAMEPAD_AXIS_LEFTY};
+
     std::cout << "Using default config" << std::endl;
     try {
       this->save_config();
@@ -162,12 +180,11 @@ void GamepadController::load_config() {
           this->virtual_mouse->set_sensitivity(0.2);
         }
       } else if (config_key == "MOUSE_JOY") {
-        if (config_value == "RIGHT") {
-          this->mouse_x_axis = SDL_GAMEPAD_AXIS_RIGHTX;
-          this->mouse_y_axis = SDL_GAMEPAD_AXIS_RIGHTY;
-        } else if (config_value == "LEFT") {
-          this->mouse_x_axis = SDL_GAMEPAD_AXIS_LEFTX;
-          this->mouse_y_axis = SDL_GAMEPAD_AXIS_LEFTY;
+        auto it_joy_parser =
+            std::find_if(gamepad_joystick_parser.begin(), gamepad_joystick_parser.end(),
+                         [&](const GamepadController::JoystickParsingItem pi) { return pi.save_name == config_value; });
+        if (it_joy_parser != gamepad_joystick_parser.end()) {
+          this->mouse_joystick = it_joy_parser->joystick;
         }
       } else {
         try {
@@ -225,4 +242,8 @@ SDL_GamepadButton GamepadController::get_binded_button_for_action(VirtualDevice:
 
 std::string GamepadController::get_binded_icon_for_action(VirtualDevice::Action act) {
   return this->get_button_icon(this->get_binded_button_for_action(act));
+}
+
+std::vector<GamepadController::JoystickParsingItem> GamepadController::get_joystick_parsing_items() {
+  return gamepad_joystick_parser;
 }
