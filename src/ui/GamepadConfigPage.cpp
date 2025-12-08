@@ -80,6 +80,9 @@ void GamepadConfigPage::refresh() {
     QLabel *bind_name = new QLabel(QString::fromStdString(mouseParser.display_string), mouse_buttons_widget);
     QPushButton *bind_button = new QPushButton(mouse_buttons_widget);
     std::string button_icon_path = this->m_gamepad_controller->get_binded_icon_for_action(mouseParser.action);
+    QObject::connect(bind_button, &QPushButton::clicked, [this, mouseParser]() {
+      emit this->bindActionButtonPressed(this->m_gamepad_controller->get_gamepad_id(), mouseParser.action);
+    });
     bind_button->setIcon(QIcon(QString::fromStdString(button_icon_path)));
     bind_button->setIconSize(QSize(30, 30));
     bind_layout->addWidget(bind_name);
@@ -100,6 +103,9 @@ void GamepadConfigPage::refresh() {
     QLabel *bind_name = new QLabel(QString::fromStdString(keyboardParser.display_string), keyboard_buttons_widget);
     QPushButton *bind_button = new QPushButton(keyboard_buttons_widget);
     std::string button_icon_path = this->m_gamepad_controller->get_binded_icon_for_action(keyboardParser.action);
+    QObject::connect(bind_button, &QPushButton::clicked, [this, keyboardParser]() {
+      emit this->bindActionButtonPressed(this->m_gamepad_controller->get_gamepad_id(), keyboardParser.action);
+    });
     bind_button->setIcon(QIcon(QString::fromStdString(button_icon_path)));
     bind_button->setIconSize(QSize(30, 30));
     bind_layout->addWidget(bind_name);

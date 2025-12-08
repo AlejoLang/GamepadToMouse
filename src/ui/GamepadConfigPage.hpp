@@ -19,6 +19,7 @@ public:
 
 signals:
   void backPressed();
+  void bindActionButtonPressed(SDL_JoystickID id, VirtualDevice::Action act);
 };
 
 #endif

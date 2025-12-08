@@ -55,7 +55,11 @@ void process_gamepad_events(AppWindow *app, ControllersHandler *handler) {
     }
     case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
     case SDL_EVENT_GAMEPAD_BUTTON_UP: {
-      handler->get_current_controller()->process_key_event(&new_event);
+      if (app->wants_gamepad_input()) {
+        app->set_gamepad_input(new_event.gdevice.which, static_cast<SDL_GamepadButton>(new_event.gbutton.button));
+      } else {
+        handler->get_current_controller()->process_key_event(&new_event);
+      }
       break;
     }
     default:

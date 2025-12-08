@@ -247,3 +247,20 @@ std::string GamepadController::get_binded_icon_for_action(VirtualDevice::Action 
 std::vector<GamepadController::JoystickParsingItem> GamepadController::get_joystick_parsing_items() {
   return gamepad_joystick_parser;
 }
+
+void GamepadController::set_keybind(SDL_GamepadButton btn, VirtualDevice::Action act) {
+  auto it = std::find_if(gamepad_parser.begin(), gamepad_parser.end(),
+                         [&](const GamepadController::ParsingItem pi) { return pi.button == btn; });
+  if (it == gamepad_parser.end()) {
+    return;
+  }
+  auto it_keybind =
+      std::find_if(this->keymap.begin(), this->keymap.end(),
+                   [&](const std::pair<SDL_GamepadButton, VirtualDevice::Action> pair) { return pair.second == act; });
+  if (it_keybind != this->keymap.end()) {
+    this->keymap.erase(it_keybind);
+  }
+  std::cout << (int)keymap[btn].key << std::endl;
+  this->keymap[btn] = act;
+  std::cout << (int)keymap[btn].key << std::endl;
+}

@@ -61,6 +61,7 @@ public:
   SDL_GamepadButton get_binded_button_for_action(VirtualDevice::Action act);
   std::string get_binded_icon_for_action(VirtualDevice::Action act);
   std::vector<GamepadController::JoystickParsingItem> get_joystick_parsing_items();
+  void set_keybind(SDL_GamepadButton btn, VirtualDevice::Action act);
 };
 
 #endif
