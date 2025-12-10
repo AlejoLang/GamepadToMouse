@@ -117,6 +117,9 @@ void GamepadConfigPage::refresh() {
   layout->addWidget(keyboard_buttons_frame);
 
   layout->addStretch(1);
+  QPushButton *save_btn = new QPushButton("Save", this);
+  QObject::connect(save_btn, &QPushButton::clicked, [this]() { emit this->m_gamepad_controller->save_config(); });
+  layout->addWidget(save_btn);
   QPushButton *back_btn = new QPushButton("Back to menu", this);
   QObject::connect(back_btn, &QPushButton::clicked, [this]() { emit this->backPressed(); });
   layout->addWidget(back_btn);
