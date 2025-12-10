@@ -9,10 +9,8 @@ Icons provided by [Arks Digital](https://arks.itch.io/) (License [CC BY 4.0](htt
 
 ## Current features
 
--   Move pointer using left joystick
--   Left click with X button
--   Right click with O button.
--   Middle click with RB (Allows for scroll when holding it and moving the joystick)
-
-## TODO
+-   Configure mouse movement to use either left or right joystick.
+-   Set mouse sensitivity.
+-   Map mouse right, left and middle click to any gamepad button.
+-   Map keyboard arrow keys to any gamepad button.
 
