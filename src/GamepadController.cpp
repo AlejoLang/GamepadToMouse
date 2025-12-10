@@ -25,7 +25,7 @@ static const std::vector<GamepadController::ParsingItem> gamepad_parser = {
     {SDL_GAMEPAD_BUTTON_NORTH, "BTN_NORTH", "button_xbox_digital_y", "button_ps_digital_triangle"},
     {SDL_GAMEPAD_BUTTON_WEST, "BTN_WEST", "button_xbox_digital_x", "button_ps_digital_square"},
     {SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, "BTN_RB", "button_xbox_digital_bumper_r", "button_ps_digital_bumper_r"},
-    {SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, "BTN_LB", "button_xbox_digital_bumper_l", "button_ps_digital_bumper_r"},
+    {SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, "BTN_LB", "button_xbox_digital_bumper_l", "button_ps_digital_bumper_l"},
     {SDL_GAMEPAD_BUTTON_START, "BTN_START", "button_xbox_digital_menu", "button_ps_digital_options"},
     {SDL_GAMEPAD_BUTTON_BACK, "BTN_BACK", "button_xbox_digital_view", "button_ps_digital_share"},
     {SDL_GAMEPAD_BUTTON_GUIDE, "BTN_GUIDE", "button_xbox_digital_home", "button_ps_digital_home"},
